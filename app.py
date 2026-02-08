@@ -9,6 +9,12 @@ from backend.extensions import init_extensions
 from backend.routes import auth_bp, predict_bp, results_bp
 from backend.services.model_loader import model_loader
 
+# Get absolute paths
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+TEMPLATES_DIR = os.path.join(BASE_DIR, 'templates')
+STATIC_DIR = os.path.join(BASE_DIR, 'static')
+ASSETS_DIR = os.path.join(BASE_DIR, 'static', 'assets')
+
 
 def create_app(config_name=None):
     """Application factory."""
@@ -16,8 +22,8 @@ def create_app(config_name=None):
         config_name = os.environ.get('FLASK_ENV', 'default')
     
     app = Flask(__name__, 
-                static_folder='static',
-                template_folder='templates')
+                static_folder=STATIC_DIR,
+                template_folder=TEMPLATES_DIR)
     
     # Load configuration
     app.config.from_object(config.get(config_name, config['default']))
@@ -41,32 +47,32 @@ def create_app(config_name=None):
     # Serve frontend pages
     @app.route('/')
     def index():
-        return send_from_directory('templates', 'index.html')
+        return send_from_directory(TEMPLATES_DIR, 'index.html')
     
     @app.route('/register.html')
     def register_page():
-        return send_from_directory('templates', 'register.html')
+        return send_from_directory(TEMPLATES_DIR, 'register.html')
     
     @app.route('/login.html')
     def login_page():
-        return send_from_directory('templates', 'login.html')
+        return send_from_directory(TEMPLATES_DIR, 'login.html')
     
     @app.route('/assessment.html')
     def assessment_page():
-        return send_from_directory('templates', 'assessment.html')
+        return send_from_directory(TEMPLATES_DIR, 'assessment.html')
     
     @app.route('/results.html')
     def results_page():
-        return send_from_directory('templates', 'results.html')
+        return send_from_directory(TEMPLATES_DIR, 'results.html')
     
     # Serve static assets
     @app.route('/static/<path:path>')
     def serve_static(path):
-        return send_from_directory('static', path)
+        return send_from_directory(STATIC_DIR, path)
     
     @app.route('/assets/<path:path>')
     def serve_assets(path):
-        return send_from_directory('static/assets', path)
+        return send_from_directory(ASSETS_DIR, path)
     
     # Health check endpoint
     @app.route('/api/health')
