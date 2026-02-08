@@ -247,6 +247,78 @@
                 transform: rotate(360deg);
             }
         }
+
+        /* Demo Button Styles */
+        .demo-fab {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 1000;
+        }
+
+        .demo-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #FF9500 0%, #FF6B6B 100%);
+            border: none;
+            color: white;
+            font-size: 24px;
+            box-shadow: 0 4px 15px rgba(255, 149, 0, 0.4);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .demo-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(255, 149, 0, 0.5);
+        }
+
+        .demo-menu {
+            position: absolute;
+            bottom: 70px;
+            right: 0;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            padding: 8px;
+            display: none;
+            min-width: 180px;
+        }
+
+        .demo-menu.show {
+            display: block;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .demo-option {
+            display: block;
+            width: 100%;
+            padding: 12px 16px;
+            border: none;
+            background: none;
+            text-align: left;
+            cursor: pointer;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .demo-option:hover {
+            background: #f1f5f9;
+        }
+
+        .demo-option.low {
+            color: #00C9A7;
+        }
+
+        .demo-option.moderate {
+            color: #FF9500;
+        }
+
+        .demo-option.high {
+            color: #FF6B6B;
+        }
     </style>
 </head>
 
@@ -257,6 +329,24 @@
         <div class="spinner mb-4"></div>
         <h4 style="color: #1E293B;">Analyzing Risk Profile...</h4>
         <p class="text-muted">Running 3-stage cascade model</p>
+    </div>
+
+    <!-- Demo Button (Bottom Right) -->
+    <div class="demo-fab">
+        <div class="demo-menu" id="demoMenu">
+            <button class="demo-option low" onclick="fillDemo('low')">
+                <i class="bi bi-check-circle me-2"></i>Low Risk
+            </button>
+            <button class="demo-option moderate" onclick="fillDemo('moderate')">
+                <i class="bi bi-exclamation-circle me-2"></i>Moderate Risk
+            </button>
+            <button class="demo-option high" onclick="fillDemo('high')">
+                <i class="bi bi-x-circle me-2"></i>High Risk
+            </button>
+        </div>
+        <button class="demo-btn" onclick="toggleDemoMenu()" title="Demo Mode">
+            <i class="bi bi-lightning-fill"></i>
+        </button>
     </div>
 
     <div class="assessment-container">
@@ -730,6 +820,86 @@
             setTimeout(() => {
                 window.location.href = 'results.html';
             }, 1500);
+        }
+
+        // Demo Mode Functions
+        function toggleDemoMenu() {
+            const menu = document.getElementById('demoMenu');
+            menu.classList.toggle('show');
+        }
+
+        // Close demo menu when clicking outside
+        document.addEventListener('click', function (e) {
+            const menu = document.getElementById('demoMenu');
+            const fab = document.querySelector('.demo-fab');
+            if (!fab.contains(e.target)) {
+                menu.classList.remove('show');
+            }
+        });
+
+        function fillDemo(level) {
+            // Demo presets for Low, Moderate, High risk
+            const presets = {
+                low: {
+                    age: 58, gender: 'Female', education: 18,
+                    faqScores: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // Total: 0
+                    ecogMem: 1, ecogTotal: 1,
+                    genotype: '3/3', ptau217: 0.15, ab42: 1850, ab40: 180, nfl: 12
+                },
+                moderate: {
+                    age: 68, gender: 'Male', education: 14,
+                    faqScores: [1, 1, 1, 0, 1, 1, 1, 0, 1, 1], // Total: 8
+                    ecogMem: 2, ecogTotal: 2,
+                    genotype: '3/4', ptau217: 0.35, ab42: 1200, ab40: 200, nfl: 25
+                },
+                high: {
+                    age: 75, gender: 'Male', education: 12,
+                    faqScores: [2, 3, 2, 2, 2, 2, 3, 2, 3, 2], // Total: 23
+                    ecogMem: 3.5, ecogTotal: 3.5,
+                    genotype: '4/4', ptau217: 0.85, ab42: 650, ab40: 220, nfl: 45
+                }
+            };
+
+            const data = presets[level];
+
+            // Fill basic fields
+            document.getElementById('age').value = data.age;
+            document.getElementById('gender').value = data.gender;
+            document.getElementById('education').value = data.education;
+
+            // Fill FAQ questions
+            const faqItems = document.querySelectorAll('.faq-item');
+            faqItems.forEach((select, index) => {
+                select.value = data.faqScores[index];
+            });
+            calculateFaqTotal();
+
+            // Fill EcogMem and EcogTotal
+            document.getElementById('ecogMem').value = data.ecogMem;
+            document.getElementById('ecogMemValue').textContent = data.ecogMem.toFixed(1);
+            document.getElementById('ecogTotal').value = data.ecogTotal;
+            document.getElementById('ecogTotalValue').textContent = data.ecogTotal.toFixed(1);
+
+            // Fill Stage 2 (Genetic)
+            document.getElementById('genotype').value = data.genotype;
+
+            // Fill Stage 3 (Biomarkers)
+            document.getElementById('ptau217').value = data.ptau217;
+            document.getElementById('ab42').value = data.ab42;
+            document.getElementById('ab40').value = data.ab40;
+            document.getElementById('nfl').value = data.nfl;
+
+            // Hide menu and show notification
+            document.getElementById('demoMenu').classList.remove('show');
+
+            // Visual feedback
+            const btn = document.querySelector('.demo-btn');
+            btn.style.background = level === 'low' ? 'linear-gradient(135deg, #00C9A7, #00A896)' :
+                level === 'moderate' ? 'linear-gradient(135deg, #FF9500, #FF7A00)' :
+                    'linear-gradient(135deg, #FF6B6B, #FF4757)';
+            setTimeout(() => {
+                btn.style.background = 'linear-gradient(135deg, #FF9500 0%, #FF6B6B 100%)';
+            }, 1000);
         }
     </script>
 
