@@ -374,6 +374,12 @@
                         Screening</span>
 
                     <div class="mb-4">
+                        <label class="form-label"><i class="bi bi-person me-2"></i>Patient Name</label>
+                        <input type="text" class="form-control" id="patientName" placeholder="Enter patient's full name"
+                            required>
+                    </div>
+
+                    <div class="mb-4">
                         <label class="form-label">Age</label>
                         <input type="number" class="form-control" id="age" placeholder="e.g., 65" min="40" max="100"
                             required>
@@ -721,6 +727,7 @@
 
             // Collect form data
             const data = {
+                patientName: document.getElementById('patientName').value || 'Guest Patient',
                 age: document.getElementById('age').value,
                 gender: document.getElementById('gender').value,
                 education: document.getElementById('education').value,
@@ -841,18 +848,21 @@
             // Demo presets for Low, Moderate, High risk
             const presets = {
                 low: {
+                    patientName: 'Alice Green (Low Risk Demo)',
                     age: 58, gender: 'Female', education: 18,
                     faqScores: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // Total: 0
                     ecogMem: 1, ecogTotal: 1,
                     genotype: '3/3', ptau217: 0.15, ab42: 1850, ab40: 180, nfl: 12
                 },
                 moderate: {
+                    patientName: 'Robert Smith (Moderate Risk Demo)',
                     age: 68, gender: 'Male', education: 14,
                     faqScores: [1, 1, 1, 0, 1, 1, 1, 0, 1, 1], // Total: 8
                     ecogMem: 2, ecogTotal: 2,
                     genotype: '3/4', ptau217: 0.35, ab42: 1200, ab40: 200, nfl: 25
                 },
                 high: {
+                    patientName: 'John Doe (High Risk Demo)',
                     age: 75, gender: 'Male', education: 12,
                     faqScores: [2, 3, 2, 2, 2, 2, 3, 2, 3, 2], // Total: 23
                     ecogMem: 3.5, ecogTotal: 3.5,
@@ -863,6 +873,7 @@
             const data = presets[level];
 
             // Fill basic fields
+            document.getElementById('patientName').value = data.patientName;
             document.getElementById('age').value = data.age;
             document.getElementById('gender').value = data.gender;
             document.getElementById('education').value = data.education;

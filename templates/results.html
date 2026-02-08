@@ -392,10 +392,14 @@
 
         <!-- Actions -->
         <div class="text-center" data-aos="fade-up" data-aos-delay="300">
+            <button onclick="generatePDF()" class="btn btn-primary me-3"
+                style="background: #2D3748; border: none; padding: 16px 32px; border-radius: 50px; font-weight: 600;">
+                <i class="bi bi-file-earmark-pdf me-2"></i>Download Report
+            </button>
             <a href="assessment.html" class="btn btn-mirai me-3">
                 <i class="bi bi-arrow-repeat me-2"></i>New Assessment
             </a>
-            <a href="index.html" class="btn btn-outline-secondary">
+            <a href="index.html" class="btn btn-outline-secondary" style="padding: 16px 32px; border-radius: 50px;">
                 <i class="bi bi-house me-2"></i>Back to Home
             </a>
         </div>
@@ -410,6 +414,8 @@
     <!-- Vendor JS Files -->
     <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="assets/vendor/aos/aos.js"></script>
+    <!-- jsPDF for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <script>
         // Initialize AOS
@@ -468,43 +474,48 @@
         }
 
         function getStageRisk(stage) {
+            // Try API first
             if (apiPrediction) {
                 if (stage === 1 && apiPrediction.stage1_risk) {
                     const status = apiPrediction.stage1_risk;
                     const pct = Math.round((apiPrediction.stage1_prob || 0) * 100);
-                    return {
-                        status: `${status} (${pct}%)`,
-                        class: status.toLowerCase() === 'high' ? 'status-high' :
-                            status.toLowerCase() === 'elevated' ? 'status-elevated' : 'status-low'
-                    };
+                    return { status: `${status} (${pct}%)`, class: status.toLowerCase() === 'high' ? 'status-high' : status.toLowerCase() === 'elevated' ? 'status-elevated' : 'status-low' };
                 }
                 if (stage === 2 && apiPrediction.stage2_risk) {
                     const status = apiPrediction.stage2_risk;
                     const pct = Math.round((apiPrediction.stage2_prob || 0) * 100);
-                    return {
-                        status: `${status} (${pct}%)`,
-                        class: status.toLowerCase() === 'high' ? 'status-high' :
-                            status.toLowerCase() === 'elevated' ? 'status-elevated' : 'status-low'
-                    };
+                    return { status: `${status} (${pct}%)`, class: status.toLowerCase() === 'high' ? 'status-high' : status.toLowerCase() === 'elevated' ? 'status-elevated' : 'status-low' };
                 }
                 if (stage === 3 && apiPrediction.stage3_risk) {
                     const status = apiPrediction.stage3_risk;
                     const pct = Math.round((apiPrediction.stage3_prob || 0) * 100);
-                    return {
-                        status: `${status} (${pct}%)`,
-                        class: status.toLowerCase() === 'high' ? 'status-high' :
-                            status.toLowerCase() === 'elevated' ? 'status-elevated' : 'status-low'
-                    };
-                }
-                // Stage not completed
-                if (stage === 2 && !apiPrediction.stage2_risk) {
-                    return { status: 'Skipped', class: 'status-low' };
-                }
-                if (stage === 3 && !apiPrediction.stage3_risk) {
-                    return { status: 'Skipped', class: 'status-low' };
+                    return { status: `${status} (${pct}%)`, class: status.toLowerCase() === 'high' ? 'status-high' : status.toLowerCase() === 'elevated' ? 'status-elevated' : 'status-low' };
                 }
             }
-            // Fallback to mock
+
+            // Fallback: Calculate locally based on data
+            if (stage === 1) {
+                const faq = parseInt(data.faq) || 0;
+                const ecog = parseFloat(data.ecogTotal) || 1;
+                if (faq >= 9 || ecog > 3) return { status: 'High Risk', class: 'status-high' };
+                if (faq >= 5 || ecog > 2) return { status: 'Elevated', class: 'status-elevated' };
+                return { status: 'Low Risk', class: 'status-low' };
+            }
+            if (stage === 2) {
+                const genotype = data.genotype || '';
+                if (genotype === '4/4') return { status: 'High Risk', class: 'status-high' };
+                if (genotype.includes('4')) return { status: 'Elevated', class: 'status-elevated' };
+                return { status: 'Low Risk', class: 'status-low' };
+            }
+            if (stage === 3) {
+                const ptau = parseFloat(data.ptau217) || 0;
+                const ab42 = parseFloat(data.ab42) || 0;
+                if (ptau > 0.6) return { status: 'Positive', class: 'status-high' };
+                if (ptau > 0.3) return { status: 'Intermediate', class: 'status-elevated' };
+                if (ptau === 0 && ab42 === 0) return { status: 'Skipped', class: 'status-low' };
+                return { status: 'Negative', class: 'status-low' };
+            }
+
             return { status: 'N/A', class: 'status-low' };
         }
 
@@ -545,6 +556,96 @@
             document.getElementById('stage3Status').textContent = s3.status;
             document.getElementById('stage3Status').className = `pipeline-status ${s3.class}`;
         }, 800);
+
+        // Generate PDF Report
+        window.generatePDF = function () {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // Header
+            doc.setFillColor(94, 75, 255); // #5E4BFF
+            doc.rect(0, 0, 210, 40, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(22);
+            doc.setFont("helvetica", "bold");
+            doc.text("MirAI Risk Assessment Report", 105, 20, null, null, "center");
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "normal");
+            doc.text("Early Alzheimer's Detection Platform", 105, 30, null, null, "center");
+
+            // Patient Info
+            doc.setTextColor(44, 62, 80);
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.text("Patient Information", 20, 55);
+
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "normal");
+            doc.text(`Name: ${data.patientName || 'N/A'}`, 20, 65);
+            doc.text(`Age: ${data.age || 'N/A'}`, 20, 72);
+            doc.text(`Gender: ${data.gender || 'N/A'}`, 80, 72);
+            doc.text(`Date: ${new Date().toLocaleDateString()}`, 140, 65);
+
+            // Risk Score Highlighting
+            const riskScore = getRiskScore();
+            const riskCategory = getRiskCategory(riskScore);
+
+            doc.setDrawColor(200, 200, 200);
+            doc.setFillColor(248, 250, 252);
+            doc.roundedRect(20, 85, 170, 40, 3, 3, 'FD');
+
+            doc.setFontSize(16);
+            doc.setFont("helvetica", "bold");
+            doc.text("Overall Risk Assessment", 105, 98, null, null, "center");
+
+            doc.setFontSize(22);
+            if (riskCategory.class === 'high') doc.setTextColor(255, 107, 107);
+            else if (riskCategory.class === 'elevated') doc.setTextColor(255, 149, 0);
+            else doc.setTextColor(0, 201, 167);
+
+            doc.text(`${riskScore}% - ${riskCategory.label}`, 105, 112, null, null, "center");
+
+            // Pipeline Details
+            doc.setTextColor(44, 62, 80);
+            doc.setFontSize(14);
+            doc.text("Clinical Pipeline Breakdown", 20, 145);
+
+            const s1 = getStageRisk(1);
+            const s2 = getStageRisk(2);
+            const s3 = getStageRisk(3);
+
+            // Stage 1
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "bold");
+            doc.text("Stage 1: Clinical Screening", 20, 158);
+            doc.setFont("helvetica", "normal");
+            doc.text(`Result: ${s1.status}`, 120, 158);
+            doc.text(`(FAQ Score: ${data.faq || 0}/30, Ecog: ${data.ecogTotal || 0})`, 20, 164);
+
+            // Stage 2
+            doc.setFont("helvetica", "bold");
+            doc.text("Stage 2: Genetic Analysis", 20, 176);
+            doc.setFont("helvetica", "normal");
+            doc.text(`Result: ${s2.status}`, 120, 176);
+            doc.text(`(Genotype: ${data.genotype || 'Not Provided'})`, 20, 182);
+
+            // Stage 3
+            doc.setFont("helvetica", "bold");
+            doc.text("Stage 3: Biomarker Confirmation", 20, 194);
+            doc.setFont("helvetica", "normal");
+            doc.text(`Result: ${s3.status}`, 120, 194);
+            doc.text(`(pTau-217: ${data.ptau217 || 'N/A'}, Aβ42: ${data.ab42 || 'N/A'})`, 20, 200);
+
+            // Disclaimer
+            doc.setFontSize(9);
+            doc.setTextColor(100, 100, 100);
+            doc.text("DISCLAIMER: This report is generated by an AI screening tool and DOES NOT constitute a medical diagnosis.", 20, 270);
+            doc.text("Please consult a specialist for proper evaluation.", 20, 275);
+
+            // Save
+            const safeName = (data.patientName || 'Patient').replace(/[^a-z0-9]/gi, '_');
+            doc.save(`MirAI_Report_${safeName}.pdf`);
+        }
 
         // Explainability
         setTimeout(() => {
