@@ -1,3 +1,13 @@
+---
+title: MirAI Alzheimer Screening
+emoji: 🧠
+colorFrom: blue
+colorTo: purple
+sdk: docker
+pinned: false
+app_port: 7860
+---
+
 # MirAI - Alzheimer's Early Screening Platform
 
 **MirAI** (未来 - "Future") is a production-grade, multi-stage Alzheimer's Disease early-screening platform using a 3-tier cascade AI model.
