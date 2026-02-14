@@ -1,5 +1,5 @@
 ---
-title: MirAI Alzheimer Screening
+title: MirAI Alzheimer Screening 
 emoji: 🧠
 colorFrom: blue
 colorTo: purple
